@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AniStream | Ultra</title>
-    <link rel="stylesheet" href="https://plyr.io" />
+    <!-- Corrected CDN link for Plyr CSS -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -91,22 +92,18 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <script src="https://plyr.io"></script>
+    <!-- Corrected CDN link for Plyr JS -->
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
 
     <script>
-        // Note: Make sure BACKEND_NODE points to a valid public Consumet instance
-        // "https://consumet-api.herokuapp.com" or a custom Vercel deployment is recommended
-        // We wrap the API in a free CORS proxy to bypass your browser's local security block
         const BACKEND_NODE = "https://animescrapper-three.vercel.app";
         let engineHls = null;
         let enginePlyr = null;
 
-        // Automatically fetch trending shows when the page loads
         document.addEventListener("DOMContentLoaded", fetchTrending);
 
         async function fetchTrending() {
             try {
-                // Using standard top-airing endpoint logic
                 const request = await fetch(`${BACKEND_NODE}/anime/gogoanime/top-airing`);
                 const response = await request.json();
                 
@@ -132,7 +129,6 @@
             const inputVal = document.getElementById('search-field').value;
             if(!inputVal) return;
 
-            // Hide trending, show search results
             document.getElementById('trending-section').classList.add('hidden');
             document.getElementById('search-section').classList.remove('hidden');
 
