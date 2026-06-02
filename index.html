@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AniStream | Ultra</title>
+    <link rel="stylesheet" href="https://plyr.io" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Outfit', sans-serif; background: #000000; color: #ffffff; overflow-x: hidden; }
+        
+        .hero { position: relative; height: 50vh; min-height: 350px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=2560&auto=format&fit=crop') center/cover; opacity: 0.3; z-index: 0; filter: contrast(120%) saturate(150%); }
+        .hero::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 60%; background: linear-gradient(to top, #000000 10%, transparent); z-index: 1; }
+        
+        .hero-content { position: relative; z-index: 2; text-align: center; width: 100%; max-width: 800px; padding: 0 20px; }
+        .logo { font-size: 64px; font-weight: 900; background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 30px; letter-spacing: -2px; text-transform: uppercase; }
+        
+        .search-wrapper { position: relative; display: flex; background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 50px; padding: 5px; box-shadow: 0 0 40px rgba(168, 85, 247, 0.2); transition: all 0.3s ease; }
+        .search-wrapper:focus-within { border-color: #a855f7; box-shadow: 0 0 60px rgba(236, 72, 153, 0.4); transform: scale(1.02); }
+        input { flex: 1; background: transparent; border: none; padding: 20px 30px; font-size: 18px; color: #fff; outline: none; font-family: 'Outfit', sans-serif; }
+        input::placeholder { color: #6b7280; }
+        button { background: linear-gradient(135deg, #a855f7, #ec4899); border: none; padding: 0 40px; border-radius: 40px; color: #fff; font-weight: 700; font-size: 16px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; font-family: 'Outfit', sans-serif; }
+        button:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(236, 72, 153, 0.6); }
+
+        .container { max-width: 1400px; margin: 20px auto 50px; padding: 0 30px; position: relative; z-index: 3; }
+        
+        .section-title { font-size: 28px; font-weight: 700; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
+        .section-title span { color: #ec4899; }
+
+        .player-panel { display: none; background: #0a0a0a; border: 1px solid #1f1f1f; border-radius: 24px; padding: 25px; margin-bottom: 60px; box-shadow: 0 25px 50px -12px rgba(0,0,0,1); }
+        .player-header { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .player-header h2 { font-size: 24px; font-weight: 700; background: linear-gradient(135deg, #fff, #a1a1aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .ep-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; max-height: 200px; overflow-y: auto; padding-right: 10px; }
+        .ep-card { background: #121212; border: 1px solid #27272a; padding: 12px 20px; border-radius: 12px; color: #a1a1aa; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .ep-card:hover { background: #ec4899; color: #fff; border-color: #ec4899; transform: translateY(-3px); }
+        
+        .grid-layout { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 30px; margin-bottom: 50px; }
+        .media-card { background: transparent; border-radius: 16px; cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; }
+        .media-card:hover { transform: translateY(-10px) scale(1.02); }
+        .media-card img { width: 100%; height: 320px; object-fit: cover; border-radius: 16px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); transition: all 0.3s ease; }
+        .media-card:hover img { box-shadow: 0 15px 30px rgba(168, 85, 247, 0.4); }
+        .media-card h3 { font-size: 16px; font-weight: 500; margin-top: 15px; color: #e4e4e7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 5px; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #ec4899; }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <header class="hero">
+        <div class="hero-content">
+            <div class="logo">AniStream</div>
+            <div class="search-wrapper">
+                <input type="text" id="search-field" placeholder="Search the ultimate anime archive..." onkeypress="if(event.key === 'Enter') queryDatabase()">
+                <button onclick="queryDatabase()">Search</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <div id="player-box" class="player-panel">
+            <div class="player-header">
+                <h2 id="active-title">Initiating Stream...</h2>
+            </div>
+            <div style="border-radius: 16px; overflow: hidden; background: #000;">
+                <video id="video-stream-node" controls crossorigin playsinline></video>
+            </div>
+            <div id="episode-rack" class="ep-grid"></div>
+        </div>
+
+        <div id="trending-section">
+            <h2 class="section-title"><span>🔥</span> Top Airing Now</h2>
+            <div id="trending-output" class="grid-layout">
+                <h3 style="color:#71717a; font-weight: 300;">Syncing live data...</h3>
+            </div>
+        </div>
+
+        <div id="search-section" class="hidden">
+            <h2 class="section-title"><span>⚡</span> Search Results</h2>
+            <div id="catalog-output" class="grid-layout"></div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://plyr.io"></script>
+
+    <script>
+        // Note: Make sure BACKEND_NODE points to a valid public Consumet instance
+        // "https://consumet-api.herokuapp.com" or a custom Vercel deployment is recommended
+        // We wrap the API in a free CORS proxy to bypass your browser's local security block
+        const BACKEND_NODE = "https://api.consumet.org";
+        let engineHls = null;
+        let enginePlyr = null;
+
+        // Automatically fetch trending shows when the page loads
+        document.addEventListener("DOMContentLoaded", fetchTrending);
+
+        async function fetchTrending() {
+            try {
+                // Using standard top-airing endpoint logic
+                const request = await fetch(`${BACKEND_NODE}/anime/gogoanime/top-airing`);
+                const response = await request.json();
+                
+                const grid = document.getElementById('trending-output');
+                grid.innerHTML = "";
+
+                response.results.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'media-card';
+                    card.onclick = () => buildWorkspacePanel(item.id, item.title);
+                    card.innerHTML = `
+                        <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/220x320/121212/ec4899?text=Image+Missing'">
+                        <h3>${item.title}</h3>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch(err) {
+                document.getElementById('trending-output').innerHTML = "<h3 style='color:#ec4899;'>Trending data sync failed. Try searching manually.</h3>";
+            }
+        }
+
+        async function queryDatabase() {
+            const inputVal = document.getElementById('search-field').value;
+            if(!inputVal) return;
+
+            // Hide trending, show search results
+            document.getElementById('trending-section').classList.add('hidden');
+            document.getElementById('search-section').classList.remove('hidden');
+
+            document.getElementById('catalog-output').innerHTML = "<h3 style='color:#71717a; font-weight: 300; width: 100%; grid-column: 1 / -1;'>Searching the grid...</h3>";
+            try {
+                const request = await fetch(`${BACKEND_NODE}/anime/gogoanime/${encodeURIComponent(inputVal)}`);
+                const response = await request.json();
+                
+                const grid = document.getElementById('catalog-output');
+                grid.innerHTML = "";
+
+                response.results.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'media-card';
+                    card.onclick = () => buildWorkspacePanel(item.id, item.title);
+                    card.innerHTML = `
+                        <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/220x320/121212/ec4899?text=Image+Missing'">
+                        <h3>${item.title}</h3>
+                    `;
+                    grid.appendChild(card);
+                });
+                
+                window.scrollTo({ top: document.querySelector('.container').offsetTop, behavior: 'smooth' });
+            } catch(err) {
+                document.getElementById('catalog-output').innerHTML = "<h3 style='color:#ec4899; width: 100%; grid-column: 1 / -1;'>Database connection failed.</h3>";
+            }
+        }
+
+        async function buildWorkspacePanel(id, title) {
+            document.getElementById('player-box').style.display = "block";
+            document.getElementById('active-title').innerText = title;
+            window.scrollTo({ top: document.getElementById('player-box').offsetTop - 20, behavior: 'smooth' });
+
+            try {
+                const request = await fetch(`${BACKEND_NODE}/anime/gogoanime/info/${id}`);
+                const response = await request.json();
+                
+                const rack = document.getElementById('episode-rack');
+                rack.innerHTML = "";
+
+                response.episodes.forEach(ep => {
+                    const btn = document.createElement('button');
+                    btn.className = 'ep-card';
+                    btn.innerText = `Episode ${ep.number}`;
+                    btn.onclick = () => launchAdfreeStream(ep.id, title, ep.number);
+                    rack.appendChild(btn);
+                });
+
+                if (response.episodes.length > 0) {
+                    launchAdfreeStream(response.episodes[0].id, title, response.episodes[0].number);
+                }
+            } catch(err) {}
+        }
+
+        async function launchAdfreeStream(epId, title, indexNum) {
+            document.getElementById('active-title').innerText = `${title} (Episode ${indexNum})`;
+            
+            try {
+                const request = await fetch(`${BACKEND_NODE}/anime/gogoanime/watch/${epId}`);
+                const response = await request.json();
+                
+                const fileTarget = response.sources.find(s => s.quality === 'default' || s.quality === 'auto') || response.sources[0];
+                const videoTag = document.getElementById('video-stream-node');
+
+                if(engineHls) engineHls.destroy();
+
+                if (Hls.isSupported()) {
+                    engineHls = new Hls({
+                        xhrSetup: function (xhr, url) {
+                            xhr.setRequestHeader('Referer', 'https://gogocdn.com');
+                        }
+                    });
+
+                    engineHls.loadSource(fileTarget.url);
+                    engineHls.attachMedia(videoTag);
+                    
+                    engineHls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        if (!enginePlyr) {
+                            enginePlyr = new Plyr(videoTag, {
+                                controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen']
+                            });
+                        }
+                    });
+                }
+            } catch(err) {}
+        }
+    </script>
+</body>
+</html>
