@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AniStream | Ultra</title>
-    <!-- Corrected CDN link for Plyr CSS -->
     <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
     <style>
@@ -92,23 +91,36 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <!-- Corrected CDN link for Plyr JS -->
     <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
 
     <script>
-        const BACKEND_NODE = "/api";
+        // Connecting to a stable, community-maintained Heroku instance of the Consumet API
+        const BACKEND_NODE = "https://consumet-api-clone.vercel.app"; 
+        
+        // If the above clone URL fails or throws a CORS error on your local machine, uncomment the line below to use the raw proxy route:
+        // const BACKEND_NODE = "https://api.allorigins.win/raw?url=https://consumet-api.herokuapp.com";
+
         let engineHls = null;
         let enginePlyr = null;
 
         document.addEventListener("DOMContentLoaded", fetchTrending);
 
         async function fetchTrending() {
+            console.log("1. Requesting Recent Episodes...");
             try {
                 const request = await fetch(`${BACKEND_NODE}/anime/gogoanime/recent-episodes`);
+                console.log("2. Status code:", request.status);
+                
                 const response = await request.json();
+                console.log("3. API Response Data:", response);
                 
                 const grid = document.getElementById('trending-output');
                 grid.innerHTML = "";
+
+                if (!response.results || response.results.length === 0) {
+                    grid.innerHTML = "<h3 style='color:#ec4899; grid-column: 1 / -1;'>Connected, but no recent episodes found.</h3>";
+                    return;
+                }
 
                 response.results.forEach(item => {
                     const card = document.createElement('div');
@@ -121,7 +133,8 @@
                     grid.appendChild(card);
                 });
             } catch(err) {
-                document.getElementById('trending-output').innerHTML = "<h3 style='color:#ec4899;'>Trending data sync failed. Try searching manually.</h3>";
+                console.error("Fetch Error:", err);
+                document.getElementById('trending-output').innerHTML = "<h3 style='color:#ec4899; grid-column: 1 / -1;'>Trending data sync failed. See console for details.</h3>";
             }
         }
 
@@ -139,6 +152,11 @@
                 
                 const grid = document.getElementById('catalog-output');
                 grid.innerHTML = "";
+
+                if (!response.results || response.results.length === 0) {
+                    grid.innerHTML = "<h3 style='color:#ec4899; grid-column: 1 / -1;'>No results found.</h3>";
+                    return;
+                }
 
                 response.results.forEach(item => {
                     const card = document.createElement('div');
