@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/api/consumet/:path*",
-      "destination": "https://api.consumet.org/:path*"
+      "source": "/api/:match*",
+      "destination": "https://animescrapper-muhammadfarhaniqbal786-4237s-projects.vercel.app/:match*"
     }
   ]
 }
