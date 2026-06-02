@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://animescrapper-three.vercel.app/:match*"
+      "destination": "https://consumet-api-clone.vercel.app/:match*"
     }
   ]
 }
