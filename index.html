@@ -78,7 +78,7 @@
         </div>
 
         <div id="trending-section">
-            <h2 class="section-title"><span>🔥</span> Top Airing Now</h2>
+            <h2 class="section-title"><span>🔥</span> Recently Released Episodes</h2>
             <div id="trending-output" class="grid-layout">
                 <h3 style="color:#71717a; font-weight: 300;">Syncing live data...</h3>
             </div>
@@ -104,7 +104,7 @@
 
         async function fetchTrending() {
             try {
-                const request = await fetch(`${BACKEND_NODE}/anime/gogoanime/top-airing`);
+                const request = await fetch(`${BACKEND_NODE}/anime/gogoanime/recent-episodes`);
                 const response = await request.json();
                 
                 const grid = document.getElementById('trending-output');
