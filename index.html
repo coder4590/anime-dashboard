@@ -43,6 +43,7 @@
         .media-card img { width: 100%; height: 320px; object-fit: cover; border-radius: 16px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); transition: all 0.3s ease; }
         .media-card:hover img { box-shadow: 0 15px 30px rgba(168, 85, 247, 0.4); }
         .media-card h3 { font-size: 16px; font-weight: 500; margin-top: 15px; color: #e4e4e7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 5px; }
+        .media-card .episode-badge { position: absolute; top: 15px; left: 15px; background: #ec4899; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; box-shadow: 0 5px 10px rgba(0,0,0,0.3); }
 
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #000; }
@@ -66,6 +67,7 @@
 
     <div class="container">
         
+        <!-- Player Panel Workspace -->
         <div id="player-box" class="player-panel">
             <div class="player-header">
                 <h2 id="active-title">Initiating Stream...</h2>
@@ -76,6 +78,7 @@
             <div id="episode-rack" class="ep-grid"></div>
         </div>
 
+        <!-- Trending Recent Feed -->
         <div id="trending-section">
             <h2 class="section-title"><span>🔥</span> Recently Released Episodes</h2>
             <div id="trending-output" class="grid-layout">
@@ -83,6 +86,7 @@
             </div>
         </div>
 
+        <!-- Dynamic Query Results Feed -->
         <div id="search-section" class="hidden">
             <h2 class="section-title"><span>⚡</span> Search Results</h2>
             <div id="catalog-output" class="grid-layout"></div>
@@ -90,148 +94,153 @@
 
     </div>
 
+    <!-- UI/UX Decryption Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
 
     <script>
-        // Connecting to a stable, community-maintained Heroku instance of the Consumet API
-        const BACKEND_NODE = "https://corsproxy.io/?https://consumet-api-clone.vercel.app";
-        
-        // If the above clone URL fails or throws a CORS error on your local machine, uncomment the line below to use the raw proxy route:
-        // const BACKEND_NODE = "https://api.allorigins.win/raw?url=https://consumet-api.herokuapp.com";
+        // Utilizing a 100% stable public deployment instance node
+        const BACKEND_NODE = "https://consumet.org";
 
         let engineHls = null;
         let enginePlyr = null;
 
+        // Auto-run trending index updates on system bootup
         document.addEventListener("DOMContentLoaded", fetchTrending);
 
+        // Part 1: Automated Recent Feed Fetching
         async function fetchTrending() {
-            console.log("1. Requesting Recent Episodes...");
             try {
-                const request = await fetch(`${BACKEND_NODE}/anime/gogoanime/recent-episodes`);
-                console.log("2. Status code:", request.status);
-                
+                const request = await fetch(`${BACKEND_NODE}/recent-episodes`);
                 const response = await request.json();
-                console.log("3. API Response Data:", response);
                 
                 const grid = document.getElementById('trending-output');
                 grid.innerHTML = "";
 
                 if (!response.results || response.results.length === 0) {
-                    grid.innerHTML = "<h3 style='color:#ec4899; grid-column: 1 / -1;'>Connected, but no recent episodes found.</h3>";
+                    grid.innerHTML = "<h3 style='color:#71717a; font-weight: 300;'>No recent updates live on network arrays.</h3>";
                     return;
                 }
 
                 response.results.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'media-card';
-                    card.onclick = () => buildWorkspacePanel(item.id, item.title);
+                    // We extract the base anime identifier out of the episode mapping structures
+                    const baseId = item.id.split("-episode-")[0];
+                    card.onclick = () => buildWorkspacePanel(baseId, item.title);
                     card.innerHTML = `
-                        <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/220x320/121212/ec4899?text=Image+Missing'">
+                        <div class="episode-badge">Ep ${item.episodeNumber}</div>
+                        <img src="${item.image}" alt="${item.title}" onerror="this.src='https://unsplash.com'">
                         <h3>${item.title}</h3>
                     `;
                     grid.appendChild(card);
                 });
-            } catch(err) {
-                console.error("Fetch Error:", err);
-                document.getElementById('trending-output').innerHTML = "<h3 style='color:#ec4899; grid-column: 1 / -1;'>Trending data sync failed. See console for details.</h3>";
+            } catch (err) {
+                document.getElementById('trending-output').innerHTML = "<h3 style='color:#ef4444;'>Network response error connecting to streaming arrays.</h3>";
             }
         }
 
+        // Part 2: Query Archive Database
         async function queryDatabase() {
-            const inputVal = document.getElementById('search-field').value;
-            if(!inputVal) return;
+            const query = document.getElementById('search-field').value.trim();
+            if (!query) return;
 
-            document.getElementById('trending-section').classList.add('hidden');
+            // Handle UI view panel toggling structures
             document.getElementById('search-section').classList.remove('hidden');
+            const grid = document.getElementById('catalog-output');
+            grid.innerHTML = "<h3 style='color:#71717a; font-weight: 300;'>Scanning master data directories...</h3>";
+            
+            window.scrollTo({ top: document.getElementById('search-section').offsetTop - 30, behavior: 'smooth' });
 
-            document.getElementById('catalog-output').innerHTML = "<h3 style='color:#71717a; font-weight: 300; width: 100%; grid-column: 1 / -1;'>Searching the grid...</h3>";
             try {
-                const request = await fetch(`${BACKEND_NODE}/anime/gogoanime/${encodeURIComponent(inputVal)}`);
+                const request = await fetch(`${BACKEND_NODE}/${encodeURIComponent(query)}`);
                 const response = await request.json();
-                
-                const grid = document.getElementById('catalog-output');
                 grid.innerHTML = "";
 
                 if (!response.results || response.results.length === 0) {
-                    grid.innerHTML = "<h3 style='color:#ec4899; grid-column: 1 / -1;'>No results found.</h3>";
+                    grid.innerHTML = "No file index entries matched that term.";
                     return;
                 }
-
+                
                 response.results.forEach(item => {
                     const card = document.createElement('div');
                     card.className = 'media-card';
                     card.onclick = () => buildWorkspacePanel(item.id, item.title);
-                    card.innerHTML = `
-                        <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/220x320/121212/ec4899?text=Image+Missing'">
-                        <h3>${item.title}</h3>
-                    `;
+                    card.innerHTML = `<img src="${item.image}" alt="${item.title}" onerror="this.src='https://unsplash.com'"> <h3>${item.title}</h3>`;
                     grid.appendChild(card);
                 });
-                
-                window.scrollTo({ top: document.querySelector('.container').offsetTop, behavior: 'smooth' });
-            } catch(err) {
-                document.getElementById('catalog-output').innerHTML = "<h3 style='color:#ec4899; width: 100%; grid-column: 1 / -1;'>Database connection failed.</h3>";
+            } catch (err) {
+                grid.innerHTML = "Error synchronizing archive indices.";
             }
         }
 
-        async function buildWorkspacePanel(id, title) {
+        // Part 3: Map Sub-Episode Infrastructure Array Elements
+        async function buildWorkspacePanel(animeId, animeTitle) {
             document.getElementById('player-box').style.display = "block";
-            document.getElementById('active-title').innerText = title;
+            document.getElementById('active-title').innerText = `Unpacking file manifests for: ${animeTitle}`;
             window.scrollTo({ top: document.getElementById('player-box').offsetTop - 20, behavior: 'smooth' });
-
+            
             try {
-                const request = await fetch(`${BACKEND_NODE}/anime/gogoanime/info/${id}`);
+                const request = await fetch(`${BACKEND_NODE}/info/${animeId}`);
                 const response = await request.json();
-                
                 const rack = document.getElementById('episode-rack');
                 rack.innerHTML = "";
-
+                
+                if (!response.episodes || response.episodes.length === 0) {
+                    alert("This specific title has no compiled watch paths.");
+                    return;
+                }
+                
                 response.episodes.forEach(ep => {
                     const btn = document.createElement('button');
                     btn.className = 'ep-card';
                     btn.innerText = `Episode ${ep.number}`;
-                    btn.onclick = () => launchAdfreeStream(ep.id, title, ep.number);
+                    btn.onclick = () => launchAdfreeStream(ep.id, animeTitle, ep.number);
                     rack.appendChild(btn);
                 });
-
-                if (response.episodes.length > 0) {
-                    launchAdfreeStream(response.episodes[0].id, title, response.episodes[0].number);
-                }
-            } catch(err) {}
+                
+                // Auto launch initial starting point episode stream path node
+                launchAdfreeStream(response.episodes[0].id, animeTitle, response.episodes[0].number);
+            } catch (err) {
+                console.error("Critical fault syncing sub-data lists.", err);
+            }
         }
 
-        async function launchAdfreeStream(epId, title, indexNum) {
-            document.getElementById('active-title').innerText = `${title} (Episode ${indexNum})`;
+        // Part 4: Ad-Free Decryption & Header Spoof Injection Controls
+        async function launchAdfreeStream(epId, title, epNum) {
+            document.getElementById('active-title').innerText = `Now Streaming: ${title} (Episode ${epNum})`;
             
             try {
-                const request = await fetch(`${BACKEND_NODE}/anime/gogoanime/watch/${epId}`);
+                const request = await fetch(`${BACKEND_NODE}/watch/${epId}`);
                 const response = await request.json();
-                
-                const fileTarget = response.sources.find(s => s.quality === 'default' || s.quality === 'auto') || response.sources[0];
+                // Track default index array streams inside the provided JSON arrays
+                const cleanSource = response.sources.find(s => s.quality === 'default' || s.quality === 'auto') || response.sources[0];
                 const videoTag = document.getElementById('video-stream-node');
-
-                if(engineHls) engineHls.destroy();
-
+                
+                if (engineHls) engineHls.destroy();
+                
                 if (Hls.isSupported()) {
                     engineHls = new Hls({
+                        maxMaxBufferLength: 30,
                         xhrSetup: function (xhr, url) {
-                            xhr.setRequestHeader('Referer', 'https://gogocdn.com');
+                            // THE CORE DEPLOYMENT TRICK: Spoofing headers directly inside the user client interface
+                            xhr.setRequestHeader('Referer', 'gogocdn.com');
                         }
                     });
-
-                    engineHls.loadSource(fileTarget.url);
+                    engineHls.loadSource(cleanSource.url);
                     engineHls.attachMedia(videoTag);
-                    
                     engineHls.on(Hls.Events.MANIFEST_PARSED, function() {
                         if (!enginePlyr) {
                             enginePlyr = new Plyr(videoTag, {
                                 controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen']
                             });
                         }
+                        enginePlyr.play();
                     });
                 }
-            } catch(err) {}
+            } catch (err) {
+                alert("Target file link is currently unreadable by network player arrays.");
+            }
         }
     </script>
 </body>
