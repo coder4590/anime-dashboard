@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://animescrapper-muhammadfarhaniqbal786-4237s-projects.vercel.app/:match*"
+      "destination": "https://animescrapper-three.vercel.app/:match*"
     }
   ]
 }
